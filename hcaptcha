@@ -1,0 +1,122 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2025 Cosmic-Developers-Union (CDU), All rights reserved.
+
+"""Models Description
+
+"""
+import requests
+import re
+import time
+from datetime import datetime
+proxy_ip = "****:****@****:1234"
+
+proxy = {
+    'http': 'http://' + proxy_ip,
+    'https': 'http://' + proxy_ip
+}
+
+headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+    'sec-ch-ua': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+}
+
+response = requests.get('https://store.steampowered.com/join/?&snr=1_60_4__62', headers=headers, proxies=proxy)
+
+init_id = re.findall(r'id=\"init_id\" value=\"(.*?)\"', response.text)[0]
+
+print(time, init_id)
+
+headers = {
+    "Accept": "text/javascript, text/html, application/xml, text/xml, */*",
+    "Accept-Language": "zh",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+    "Origin": "https://store.steampowered.com",
+    "Pragma": "no-cache",
+    "Referer": "https://store.steampowered.com/join/?&snr=1_60_4__62",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+    "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+    "X-Prototype-Version": "1.7",
+    "X-Requested-With": "XMLHttpRequest",
+    "sec-ch-ua": '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+}
+
+url = "https://store.steampowered.com/join/refreshcaptcha/"
+data = {"count": "1", "hcaptcha": "1"}
+response = requests.post(url, headers=headers, data=data, proxies=proxy)
+print(response.json())
+gid = response.json().get("gid")
+sitekey = response.json().get("sitekey")
+
+# url = 'https://****/api/v1/p1/steam/su/'  # Other regions
+# url = 'https://****/api/v1/p1/steam/su/'  #  CHINA
+url = "http://198.89.125.212:9696/hc"
+data = {
+    'sitekey': sitekey,  # 网站唯一key   WEB-SITEKEY
+    # 'sitekey':'e18a349a-46c2-46a0-87a8-74be79345c9'
+    'ip': 'http://' + proxy_ip,  # 代理 格式   PROXYIP：http://ip:port或者http://user:password@ip:port
+
+    'appid': '5ab17364ac6720a8e0fc330dd55a81da',
+    'url': 'https://store.steampowered.com/join/?&snr=1_60_4__62',  # 触发hc的url   USE HCAPTCHA url
+    'key_id': 'steam_1',  # steam为
+    'feature_id': gid  # steam gid   epic client_id
+}
+
+# 83f2af2e03b6fdf19bd5b4dc866cb606
+from loguru import logger
+
+response = requests.post(url, json=data)
+logger.info(response.json())
+token = response.json()['data']['p1']["p1"]
+print(time, response.json())
+assert "P1" in token
+headers = {
+    'Accept': '*/*',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'Origin': 'https://store.steampowered.com',
+    'Pragma': 'no-cache',
+    'Referer': 'https://store.steampowered.com/join/?&snr=1_60_4__62',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+    'X-Requested-With': 'XMLHttpRequest',
+    'sec-ch-ua': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+}
+logger.info(f"{token=}")
+data = {
+    'email': '3865616264@qq.com',
+    'captchagid': gid,
+    'captcha_text': token,
+    'elang': '6',
+    'init_id': init_id,
+    'guest': 'False',
+}
+
+response = requests.post('https://store.steampowered.com/join/ajaxverifyemail', headers=headers, data=data,
+                         proxies=proxy)
+
+print(response.text)
+print(time, response)
